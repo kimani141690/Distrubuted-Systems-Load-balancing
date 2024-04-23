@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 
 @app.route('/')
-def hello_world():  # put application's code here
+def hello_world():
     return redirect('/home')
 
 
