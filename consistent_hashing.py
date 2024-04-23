@@ -7,3 +7,28 @@ class ConsistentHash:
         self.num_servers = num_servers
         self.num_vservers_per_server = num_vservers_per_server or int(math.log2(num_slots))
 
+    def hash_request(self, i):
+        return (i**2 + 2*i + 17) % self.num_slots
+
+    def hash_virtual_server(self, i, j):
+        return (i + j ** 2 + 2 * j + 25) % self.num_slots
+
+    def add_servers(self):
+        for i in range(1, self.num_servers + 1):
+            for j in range(self.num_vservers_per_server):
+                slot = self.hash_virtual_server(i, j)
+                self.place_server(i, j, slot)
+
+    def place_server(self, server_id, virtual_id, start_slot):
+        slot = start_slot
+        while self.hash_map[slot] is not None:
+            # Linear probing
+            slot = (slot + 1) % self.num_slots
+        self.hash_map[slot] = (server_id, virtual_id)
+
+    def get_server(self, request_id):
+        slot = self.hash_request(request_id)
+        while self.hash_map[slot] is None:
+            # This shouldn't happen in a properly initialized map, but just in case:
+            slot = (slot + 1) % self.num_slots
+        return self.hash_map[slot]
