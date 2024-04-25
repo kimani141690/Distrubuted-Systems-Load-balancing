@@ -6,3 +6,29 @@ services:
       context: app
     ports:
       - "5000:5000"
+
+  load_balancer:
+    build: ./load_balancer
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - server1
+      - server2
+      - server3
+
+  server1:
+     build: ./server
+     environment:
+       - PORT=5001
+
+  server2:
+    build: ./server
+    environment:
+      - PORT=5002
+
+  server3:
+    build: ./server
+    environment:
+      - PORT=5003
