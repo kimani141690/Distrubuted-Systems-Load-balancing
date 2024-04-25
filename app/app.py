@@ -14,7 +14,7 @@ def hello_world():
 @app.route('/home')
 def home():
     no = random.randint(1, 3)
-    server_id = os.getenv('SERVER_ID', f'Server-{no}')
+    server_id = os.getenv('PORT', f'Server-{no}')
     return jsonify(message=f"Hello from : {server_id}", status="successful")
 
 
