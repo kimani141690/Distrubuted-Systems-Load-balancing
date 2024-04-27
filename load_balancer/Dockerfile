@@ -1,4 +1,4 @@
-# Dockerfile for load balancer
+# Dockerfile for load_balancer
 FROM python:3.8-slim
 
 # Set the working directory in the container
