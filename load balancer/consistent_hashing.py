@@ -12,7 +12,8 @@ class ConsistentHash:
     def initialize_servers(self, num_servers):
         for server_id in range(1, num_servers + 1):
             hostname = f"Server {server_id}"
-            self.add_server(server_id, hostname)
+            port = 5000 + server_id
+            self.add_server(server_id, hostname,port)
 
     def hash_request_mapping(self, i):
         return (i ** 2 + 2 * (i ** 2) + 17 ** 2) % self.num_slots
@@ -20,15 +21,16 @@ class ConsistentHash:
     def hash_virtual_server(self, i, j):
         return (i + j + 2 * j + 25) % self.num_slots
 
-    def add_server(self, server_id, hostname):
-        self.servers[server_id] = hostname
+    def add_server(self, server_id, hostname, port):
+        self.servers[server_id] = (hostname, port)
         self.num_servers += 1
-        print(f"Added server {server_id} with hostname: {hostname}")
-        print(f"All servers are: {', '.join(str(x) for x in self.servers.values())}")
+        print(f"Added server {server_id} with hostname: {hostname} and port: {port}")
+        print(f"All servers are: {', '.join(f'{h}:{p}' for h, p in self.servers.values())}")
 
         for j in range(self.num_vservers_per_server):
             slot = self.hash_virtual_server(server_id, j)
             self.place_server(server_id, j, slot)
+
 
     def place_server(self, server_id, virtual_id, start_slot):
         slot = start_slot
