@@ -73,3 +73,19 @@ for i in range(1, 10):
     request_id = i + 225
     server_info = consistent_hash.get_server(request_id)
     print(f"Request {request_id} is handled by server container {server_info[0]}, virtual server {server_info[1]}")
+
+
+    # initiating default servers
+    def init_servers(self):
+        try:
+            client = docker.from_env()  # Connect to the Docker daemon
+            containers = client.containers.list(filters={"name": "server"})  # Get server containers
+
+            for container in containers:
+                env_vars = container.attrs['Config']['Env']  # Get container's environment variables
+                server_id = next((var.split('=')[1] for var in env_vars if var.startswith('SERVER_ID=')), None)
+                if server_id:
+                    self.add_server_to_ring(server_id, container.name)  # Add to hash ring
+
+        except docker.errors.APIError as e:
+            print(f"Error communicating with Docker daemon: {e}")
