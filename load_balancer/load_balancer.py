@@ -1,19 +1,40 @@
-from flask import Flask, request, jsonify
-import json
-from consistent_hashing import ConsistentHash  # Importing the hashing module
-import requests
+import socket
+
+import docker
+from flask import Flask, jsonify, request, redirect
+
+from hashing import ConsistentHashing
 
 app = Flask(__name__)
+consistent_hash = ConsistentHashing()
 
-# Initialize the consistent hash map with default servers
-consistent_hash = ConsistentHash()
+
+@app.route('/')
+def root():
+    return redirect('/<path>')
+
 
 @app.route('/rep', methods=['GET'])
 def get_replicas():
-    # Gather detailed status from consistent_hash instance
-    replicas = [hostnames for server_id, hostnames in consistent_hash.servers.items()]
-    return jsonify(message={"N": len(replicas), "replicas": replicas}, status="successful"), 200
-
+    # Returns the status of the replicas managed by the load balancer
+    status = {}
+    try:
+        for server_hash, server_tuple in consistent_hash.hash_ring.items():
+            server_key = f"{server_tuple[0]} ({server_tuple[1]})"  # Convert tuple to string
+            if server_key not in status:
+                status[server_key] = []
+            status[server_key].append(server_hash)
+        return jsonify(
+            message={"N": len(status),
+                     "servers + replicas": status
+                     },
+            status="successful"
+        ), 200
+    except Exception as e:
+        return jsonify(
+            message={"error": str(e)},
+            status="failure"
+        ), 500
 
 @app.route('/add', methods=['POST'])
 def add_servers():
