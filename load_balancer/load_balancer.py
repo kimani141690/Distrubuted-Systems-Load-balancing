@@ -38,33 +38,32 @@ def get_replicas():
 
 @app.route('/add', methods=['POST'])
 def add_servers():
-#     url = "http://localhost:5000"
-#     data = {
-#         'n': '3',
-#         'hostnames': ['S4, S5, S6']
-#     }
-#     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-#     r = requests.post(url, data=json.dumps(data), headers=headers)
-#     process_add_servers()
-#
-# def process_add_servers():
     data = request.get_json()
-    hostnames = data.get('hostnames', [])
+    n = data['n']
+    server_ids = data['server_ids']
+    hostnames = data['hostnames']
 
-    # Validating input
-    if len(hostnames) != data['n']:
-        return jsonify(message={"error": "Mismatch between number of servers and number of hostnames"}), 400
+    if len(server_ids) != n:
+        return jsonify(
+            message={
+                "error": "Mismatch between number of servers and number of hostnames"
+            }
+        ), 400
+    else:
+        if len(hostnames) < n:
+            default_hostname_prefix = "unnamed_"
+            for i in range(len(hostnames), n):
+                hostnames.append(f"{default_hostname_prefix}{i}")
+        for server_id in server_ids:
+            consistent_hash.add_server_to_ring(server_id, hostnames.pop(0))
 
-    # Adding new servers
-    for hostname in hostnames:
-        new_server_id = consistent_hash.num_servers + 1
-        consistent_hash.add_server(new_server_id, hostname)
-
-    return (
-        jsonify(message={"Added servers": data['n'], "total_servers": consistent_hash.num_servers}, status="successful"),
-        get_replicas(),
-        200
-    )
+        return jsonify(
+            message={
+                "Added servers": n,
+                "total_servers": consistent_hash.no_of_servers
+            },
+            status="successful"
+        ), 200
 
 
 @app.route('/rm', methods=['DELETE'])
