@@ -3,10 +3,10 @@ import socket
 import docker
 from flask import Flask, jsonify, request, redirect
 
-from hashing import ConsistentHashing
+from consistent_hashing import ConsistentHash
 
 app = Flask(__name__)
-consistent_hash = ConsistentHashing()
+consistent_hash = ConsistentHash()
 
 
 @app.route('/')
@@ -35,6 +35,7 @@ def get_replicas():
             message={"error": str(e)},
             status="failure"
         ), 500
+
 
 @app.route('/add', methods=['POST'])
 def add_servers():
@@ -69,42 +70,85 @@ def add_servers():
 @app.route('/rm', methods=['DELETE'])
 def remove_servers():
     data = request.get_json()
-    num_servers = data.get('n')
-    hostnames = data.get('hostnames', [])
+    n = data['n']
+    hostnames = data['hostnames']
 
-    # Validate input
-    if len(hostnames) != num_servers:
-        return jsonify(message={"error": "Mismatch between number of servers to remove and number of hostnames provided"},status="failure"), 400
+    if len(hostnames) != n:
+        return jsonify(
+            message={
+                "error": "Mismatch between count 'n' and the actual list of hostnames provided"
+            },
+            status="failure"
+        ), 400
 
-    # Check if all hostnames are valid
-    invalid_hosts = [host for host in hostnames if
-                     host not in [server['hostname'] for server in consistent_hash.servers.values()]]
-    if invalid_hosts:
-        return jsonify(message={"error": "Some hostnames do not exist", "invalid_hostnames": invalid_hosts}), 404
-
-    # Remove servers with specified hostnames
+    results = []
     for hostname in hostnames:
-        server_id = next((sid for sid, details in consistent_hash.servers.items() if details['hostname'] == hostname),
-                         None)
-        if server_id:
-            consistent_hash.remove_server(server_id)
+        result, status_code = consistent_hash.remove_server_from_ring(hostname)
+        results.append(result)
+        if status_code != 200:
+            break
 
-    return jsonify(message={"Removed servers": {num_servers}, "total_servers": len(consistent_hash.servers)}, status="successful"), 200
+    if all(result['status'] == 'successful' for result in results):
+        return jsonify(
+            message={
+                "N": len(consistent_hash.hash_ring),
+                "results": results
+            },
+            status="successful"
+        ), 200
+    else:
+        # If any hostname failed to remove, return the error from the first failed attempt
+        first_failure = next((res for res in results if res['status'] == 'failure'), None)
+        return jsonify(first_failure), 400
 
 
 @app.route('/<path:path>', methods=['GET'])
 def route_request(path):
+    print(f"Path: {path}")
+    if path in consistent_hash.registered_paths:
+
+        server_id, hostname = consistent_hash.map_request_to_server(hash(path))
+
+        container_ip, host_port = get_container_info(hostname)
+
+        if not host_port:
+            return jsonify(message="Unable to determine host port", status="failure"), 500
+
+        return redirect(f'http://127.0.0.1:{host_port}/{path}')
+
+
+def get_container_info(container_name):
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+    network = client.networks.get("load_balancer_2_app-network")
+    container = network.attrs['Containers']
+
+    for container_id, container_info in container.items():
+        if container_info['Name'] == container_name:
+            ip_address = container_info['IPv4Address'].split('/')[0]
+            container_details = client.containers.get(container_id)
+            ports = container_details.attrs['NetworkSettings']['Ports']
+
+            host_port = None
+            for port_mapping in ports.values():
+                if port_mapping and len(port_mapping) > 0:
+                    host_port = port_mapping[0]['HostPort']
+                    break
+            return ip_address, host_port
+
+    raise ValueError(f"Container '{container_name}' not found in network")
+
+
+def get_host_ip():
     try:
-        request_id = hash(path)  # Simple hash to simulate request ID based on path
-        server_info = consistent_hash.get_server(request_id)
-        if server_info:
-            server_id, virtual_id = server_info
-            # Simulate forwarding the request to the determined server
-            return jsonify(message={f"Request {request_id} has been routed to server {server_id}, virtual server {virtual_id}"}, status="successful"), 200
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
     except Exception as e:
-        return jsonify(message={"error": "No available server to handle the request", "error message": str(e)},status="failure"), 404
+        print(f"Error obtaining host IP: {e}")
+        return "127.0.0.1"
 
 
 if __name__ == '__main__':
-    app.run()
-
+    app.run(host='0.0.0.0', port=4050)
