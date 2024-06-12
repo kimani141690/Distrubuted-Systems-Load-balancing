@@ -55,20 +55,46 @@ def add_server_to_ring(self, server_id, hostname):
             slot = (slot + 1) % self.num_slots
         self.hash_map[slot] = (server_id, virtual_id)
 
-    def remove_server(self, server_id):
-        if server_id in self.servers:
-            # Clear each virtual server's slot in the hash map
-            for j in range(self.num_vservers_per_server):
-                slot = self.hash_virtual_server(server_id, j)
-                # Ensure the correct server and virtual server are removed
-                if self.hash_map[slot] == (server_id, j):
-                    self.hash_map[slot] = None
+    def remove_server_from_ring(self, hostname):
+        server_id = None
+        for key, value in self.hash_ring.items():
+            if value[1] == hostname:
+                server_id = value[0]
+                break
+        if server_id is None:
+            return {"message": f"Error: Server with hostname {hostname} not found or may have been removed",
+                    "status": "failure"}, 404
+
+        to_remove = [slot for slot, value in self.hash_ring.items() if value[0] == server_id]
+        for slot in to_remove:
+            del self.hash_ring[slot]
+
+        return {"message": f"Server {hostname} removed successfully", "status": "successful"}, 200
 
             # Remove the server from the servers dictionary
             del self.servers[server_id]
             self.num_servers -= 1
             print(f"Removed server {server_id}")
             print(f"All remaining servers: {', '.join(str(x) for x in self.servers.values())}")
+
+
+def map_request_to_server(self, request_id):
+    request_hash_value = self.request_hash_fn(request_id)
+    # Find the server with the next highest hash value
+    for server_hash, server_id in self.hash_ring.items():
+        if server_hash >= request_hash_value:
+            return server_id
+    # If the request hash value is greater than all server hash values wrap around to the first server
+    return self.hash_ring.peekitem(0)[1]
+
+    # in case a server does not respond to heartbeat and needs to be updated
+
+
+def update_servers(self, server_id, hostname):
+    self.remove_server_from_ring(server_id)
+    self.add_server_to_ring(server_id, hostname)
+    return self.hash_ring
+
 
     def get_server(self, request_id):
         slot = self.hash_request_mapping(request_id)
