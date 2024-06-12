@@ -1,19 +1,26 @@
 import math
 
 class ConsistentHash:
-    def __init__(self, num_slots=512, num_servers=3, num_vservers_per_server=None):
-        self.num_slots = num_slots
-        self.hash_map = [None] * num_slots
-        self.num_servers = num_servers
-        self.servers = {}
-        self.num_vservers_per_server = num_vservers_per_server or int(math.log2(num_slots))
-        self.initialize_servers(num_servers)
 
-    def initialize_servers(self, num_servers):
-        for server_id in range(1, num_servers + 1):
-            hostname = f"Server {server_id}"
-            port = 5000 + server_id
-            self.add_server(server_id, hostname,port)
+
+
+        def __init__(self, slots=512, no_of_servers=3):
+            self.no_of_servers = no_of_servers
+            self.slots = slots
+            self.virtual_servers = int(math.log2(slots))
+            self.hash_ring = SortedDict()
+            self.registered_paths = {'home', 'heartbeat', 'server_status'}
+            self.init_servers()
+            self.server_hash_map = {}
+
+        # j => is the number of virtual servers per server
+        # Hash function to map requests to slots
+        def request_hash_fn(self, i):
+            # return int(hashlib.md5(str(i).encode()).hexdigest(), 16) % self.slots
+            # value = (i + (2 * i) + 17) // 2
+            value = (i ** 2 + 2 * (i ** 2) + 17 ** 2)
+            hash_value = value % self.slots
+            return hash_value
 
     def hash_request_mapping(self, i):
         return (i ** 2 + 2 * (i ** 2) + 17 ** 2) % self.num_slots
