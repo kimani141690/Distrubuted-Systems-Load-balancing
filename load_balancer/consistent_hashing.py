@@ -28,16 +28,25 @@ class ConsistentHash:
     def hash_virtual_server(self, i, j):
         return (i + j + 2 * j + 25) % self.num_slots
 
-    def add_server(self, server_id, hostname, port):
-        self.servers[server_id] = (hostname, port)
-        self.num_servers += 1
-        print(f"Added server {server_id} with hostname: {hostname} and port: {port}")
-        print(f"All servers are: {', '.join(f'{h}:{p}' for h, p in self.servers.values())}")
+        # Add server to the hash ring
 
-        for j in range(self.num_vservers_per_server):
-            slot = self.hash_virtual_server(server_id, j)
-            self.place_server(server_id, j, slot)
 
+def add_server_to_ring(self, server_id, hostname):
+    if server_id in [value[0] for value in self.hash_ring.values()]:
+
+        for key, value in self.hash_ring.items():
+            if value[0] == server_id:
+                self.hash_ring[key] = (server_id, hostname)
+                print(f"Updated server {server_id} with hostname {hostname}")
+                break
+        raise ValueError(f"Server ID '{server_id}' already exists in the hash ring")
+
+    else:
+        for i in range(self.virtual_servers):
+            server_hash_value = self.virtual_hashing(server_id, i)
+            self.hash_ring[server_hash_value] = (server_id, hostname)
+        self.no_of_servers += 1
+        print(f"Added server {server_id} with hostname {hostname}")
 
     def place_server(self, server_id, virtual_id, start_slot):
         slot = start_slot
