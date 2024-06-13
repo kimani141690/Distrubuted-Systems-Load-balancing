@@ -119,7 +119,8 @@ def route_request(path):
 
 def get_container_info(container_name):
     client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-    network = client.networks.get("load_balancer_2_app-network")
+    # network = client.networks.get("load_balancer_2_app-network")
+    network = client.networks.get("distrubuted-systems-load-balancing_app-network")
     container = network.attrs['Containers']
 
     for container_id, container_info in container.items():
