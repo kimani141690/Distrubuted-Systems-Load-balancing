@@ -63,5 +63,3 @@ The load balancer has been tested with various scenarios, including adding and r
 *   Implement a more sophisticated load balancing algorithm, such as weighted consistent hashing or least connections.
 *   Add support for session persistence to ensure that requests from the same client are routed to the same server.
 *   Integrate with a service discovery mechanism to automatically discover and manage server replicas.
-
-Please refer to the code documentation and comments for more details on the implementation.
