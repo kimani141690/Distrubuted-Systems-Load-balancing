@@ -3,10 +3,10 @@ import socket
 import docker
 from flask import Flask, jsonify, request, redirect
 
-from consistent_hashing import ConsistentHash
+from consistent_hashing import ConsistentHashing
 
 app = Flask(__name__)
-consistent_hash = ConsistentHash()
+consistent_hash = ConsistentHashing()
 
 
 @app.route('/')
