@@ -16,6 +16,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+
 @app.route('/')
 def hello_world():
     return redirect('/home')
