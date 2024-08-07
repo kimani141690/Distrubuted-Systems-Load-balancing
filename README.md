@@ -1,6 +1,6 @@
-### Customizable Load Balancer
+# DS Load Balancer
 
-This project implements a customizable load balancer using consistent hashing to distribute incoming requests across multiple server replicas. The load balancer ensures even load distribution, scalability, and fault tolerance in a distributed system.
+This project implements a load balancer using consistent hashing to distribute incoming requests across multiple server replicas. The load balancer ensures even load distribution, scalability, and fault tolerance in a distributed system.
 
 #### Project Structure
 
@@ -28,13 +28,18 @@ The load balancer provides the following functionalities:
 
 #### Usage
 
-1.  **Build and Run with Docker Compose**:
+1. **Build the Server**
+   ```bash
+    docker build -t server:latest ./server
+   ```
+   
+2. **Build and Run with Docker Compose**:
     ```bash
     docker-compose up --build
     ```
     This command will build the Docker images for the load balancer and server replicas and start the containers.
 
-2.  **Access Load Balancer Endpoints**:
+3. **Access Load Balancer Endpoints**:
     The load balancer will be accessible at `http://localhost:5555`. You can use the following endpoints:
     *   **`GET /rep`**: Get the status of server replicas.
     *   **`POST /add`**: Add new server replicas.
@@ -57,6 +62,42 @@ You can customize the load balancer's behavior by modifying the following parame
 #### Testing and Performance Analysis
 
 The load balancer has been tested with various scenarios, including adding and removing servers, simulating server failures, and measuring request distribution. The results demonstrate that the load balancer effectively distributes the load evenly across the server replicas and recovers from failures promptly.
+
+### Experiment 1: Load Distribution
+
+- Launch 10,000 asynchronous requests on 3 server containers.
+- Record the number of requests handled by each server and plot a bar chart.
+- Expected Outcome: Even distribution of load among server instances.
+
+![image](https://github.com/user-attachments/assets/5f12b74c-7e00-4979-9745-f6ef47f163c6)
+
+### Experiment 2: Scalability
+
+- Increment the number of server containers from 2 to 6 (launching 10,000 requests each time).
+- Plot a line chart showing the average load of the servers at each run.
+- Expected Outcome: Efficient scaling with even load distribution as server instances increase.
+
+![image](https://github.com/user-attachments/assets/bf3b6e9e-cf75-42a3-a24b-e2def998bd15)
+
+### Experiment 3: Failure Recovery
+
+- Test load balancer endpoints and simulate server failures.
+- Ensure the load balancer spawns new instances to handle the load and maintain the specified number of replicas.
+#### Results
+![image](https://github.com/user-attachments/assets/32bd94fe-0e31-4f8f-9e8d-01f8d3bc0f1d)
+<br>
+<sup>The Servers with the prefix 'new_S*' are spawned on failure of a replica.</sup>
+- On failure of 'server_1' and 'server_3' replica 'new_S83' and 'new_S14' are spawned
+
+### Experiment 4: Hash Function Modification
+
+- Modified the hash function
+- Repeat experiments 1 and 2, analyzing the impact on load distribution and scalability.
+- #### Experiment 1 Results: Load Distribution
+  ![image](https://github.com/user-attachments/assets/d03f6a2b-6da0-464a-8194-8040337262b2)
+- #### Experiment 2 Results: Scalability
+  ![image](https://github.com/user-attachments/assets/28fd6cce-d151-4b15-9353-e4c2f86215e0)
+
 
 #### Future Improvements
 
