@@ -1,4 +1,4 @@
-### DS Load Balancer
+# DS Load Balancer
 
 This project implements a load balancer using consistent hashing to distribute incoming requests across multiple server replicas. The load balancer ensures even load distribution, scalability, and fault tolerance in a distributed system.
 
